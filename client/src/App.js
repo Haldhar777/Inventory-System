@@ -1,24 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+
 import {
   BrowserRouter as Router,
   Switch,
   Route,
   Link,
-  useParams,
   useRouteMatch,
+  Redirect,
 } from "react-router-dom";
 
-// Since routes are regular React components, they
-// may be rendered anywhere in the app, including in
-// child elements.
-//
-// This helps when it's time to code-split your app
-// into multiple bundles because code-splitting a
-// React Router app is the same as code-splitting
-// any other React app.
-
-export default function NestingExample() {
+export default function App() {
   return (
     <Router>
       <div>
@@ -38,9 +30,6 @@ export default function NestingExample() {
           <Route path="/user">
             <User />
           </Route>
-          <Route path="/register">
-            <Topics />
-          </Route>
         </Switch>
       </div>
     </Router>
@@ -49,7 +38,7 @@ export default function NestingExample() {
 
 const Homepage = () => {
   return (
-    <div>
+    <div className=" text-center">
       <Link to="/login">Login</Link>
       <br />
       <Link to="/register">Register</Link>
@@ -81,10 +70,11 @@ function Login() {
       });
   };
   return (
-    <div>
+    <div className="text-center">
       <label htmlFor="user">Username:</label>
       <br />
       <input
+        className=" border-2 border-black"
         id="user"
         type="text"
         onChange={(e) => setuserName(e.target.value)}
@@ -93,12 +83,15 @@ function Login() {
       <label htmlFor="pass">Password:</label>
       <br />
       <input
+        className=" border-2 border-black"
         id="pass"
         type="password"
         onChange={(e) => setpassWord(e.target.value)}
       ></input>
       <br />
-      <button onClick={checkUser}>Login</button>
+      <button className="border-2 border-black my-2 px-2" onClick={checkUser}>
+        Login
+      </button>
       <br />
       <Link to={`${url}/forget`}>Forgot Password?</Link>
       <Switch>
@@ -116,7 +109,9 @@ function Login() {
       ) : (
         <div>
           <h2>Verification Successfull</h2>
-          <Link to="/user">Click here</Link>
+          <Link className=" text-blue-600" to="/user">
+            Click here
+          </Link>
         </div>
       )}
     </div>
@@ -127,45 +122,201 @@ const User = (props) => {
   let { path, url } = useRouteMatch();
   return (
     <div>
-      <Link to={`${url}/products`}>Products</Link>
-      <br />
-      <Link to={`${url}/categories`}>Categories</Link>
-      <br />
-      <Link to={`${url}/addproducts`}>Add Products</Link>
-      <br />
-      <Link to={`${url}/addcategory`}>Add Category</Link>
-      <br />
+      <div className="flex justify-evenly p-2">
+        <Link to={`${url}/products`}>Products</Link>
+        <br />
+        <Link to={`${url}/categories`}>Categories</Link>
+        <br />
+        <Link to={`${url}/addproducts`}>Add Products</Link>
+        <br />
+        <Link to={`${url}/addcategory`}>Add Category</Link>
+        <br />
+        <Link to={`${url}/logout`}>Logout</Link>
+      </div>
 
       <Switch>
         <Route path={`${path}/products`}>
           <Products />
         </Route>
-        {/* <Route path={`${path}/categories`}>
+        <Route path={`${path}/categories`}>
           <Categories />
         </Route>
         <Route path={`${path}/addproducts`}>
           <Addproducts />
         </Route>
-        <Route path={`${path}/addcategories`}>
+        <Route path={`${path}/addcategory`}>
           <Addcategories />
-        </Route> */}
+        </Route>
+        <Route path={`${path}/logout`}>
+          <Logout />
+        </Route>
       </Switch>
+    </div>
+  );
+};
+
+const Logout = () => {
+  return <Redirect to="/" />;
+};
+
+const Addcategories = () => {
+  const [name, setName] = useState("");
+
+  const addCategory = () => {
+    axios
+      .post("http://localhost:3001/addcategory", {
+        name: name,
+      })
+      .then((response) => {
+        console.log(response.data);
+      });
+  };
+
+  return (
+    <div className="text-center my-8">
+      <label htmlFor="category">Enter new category name:</label>
+      <br />
+      <input
+        className="border-2 border-black"
+        type="text"
+        required
+        id="category"
+        onChange={(e) => setName(e.target.value)}
+      ></input>
+      <br />
+      <button className="border-2 border-black my-2 px-2" onClick={addCategory}>
+        Add Category
+      </button>
+    </div>
+  );
+};
+
+const Addproducts = () => {
+  const [categoryList, setcategoryList] = useState([]);
+  const [category, setCategory] = useState(0);
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState(0);
+  const [stocks, setStocks] = useState(0);
+
+  const getCategories = () => {
+    axios.get("http://localhost:3001/getcategory").then((response) => {
+      setcategoryList(response.data);
+    });
+  };
+
+  useEffect(() => {
+    getCategories();
+  }, []);
+
+  const addProduct = () => {
+    axios
+      .post("http://localhost:3001/addproduct", {
+        category: category,
+        name: name,
+        price: price,
+        stocks: stocks,
+      })
+      .then((response) => {
+        console.log("product info sent from client");
+        console.log(response.data);
+      });
+  };
+
+  return (
+    <div className="text-center mt-8">
+      <label htmlFor="category">Select Category:</label>
+      <br />
+      <select
+        className="border-2 border-black"
+        id="category"
+        name="category"
+        onChange={(e) => setCategory(e.target.value)}
+      >
+        {categoryList.map((val, index) => {
+          return (
+            <option key={index} value={val.id}>
+              {val.name}
+            </option>
+          );
+        })}
+      </select>
+      <br />
+      <br />
+      <label htmlFor="name">Enter product title:</label>
+      <br />
+      <input
+        className="border-2 border-black"
+        type="text"
+        id="name"
+        onChange={(e) => setName(e.target.value)}
+        required
+      ></input>{" "}
+      <br />
+      <label htmlFor="price">Enter product price:</label>
+      <br />
+      <input
+        className="border-2 border-black"
+        type="number"
+        id="price"
+        onChange={(e) => setPrice(e.target.value)}
+        required
+      ></input>{" "}
+      <br />
+      <label htmlFor="stocks">Enter product stocks:</label>
+      <br />
+      <input
+        className="border-2 border-black"
+        type="number"
+        id="stocks"
+        onChange={(e) => setStocks(e.target.value)}
+        required
+      ></input>{" "}
+      <br />
+      <button className="border-2 border-black my-2 px-2" onClick={addProduct}>
+        Add product
+      </button>
     </div>
   );
 };
 
 const Products = () => {
   const [productList, setproductList] = useState([]);
-  const [categoryList, setcategoryList] = useState([]);
+  const getProducts = () => {
+    axios.get("http://localhost:3001/getproduct").then((response) => {
+      setproductList(response.data);
+      console.log(response.data);
+    });
+  };
+
+  const deleteProduct = (id) => {
+    axios
+      .delete(`http://localhost:3001/deleteproduct/${id}`)
+      .then((response) => {
+        console.log("product deleted");
+      });
+  };
+
+  useEffect(() => {
+    getProducts();
+  }, []);
 
   return (
     <div>
-      {productList.map((val, key) => {
+      {productList.map((val, index) => {
         return (
-          <div className="list">
-            <h3>Name: {val.name}</h3>
-            <h3>Price: {val.price}</h3>
-            <h3>Stocks: {val.stock}</h3>
+          <div key={index} className="border-2 border-black m-2">
+            <h2>
+              {val.product_id}.&ensp;Category: {val.category}
+              &ensp;Title: {val.name}
+              &ensp; Price: {val.price}
+              &ensp;Stocks: {val.stocks}
+            </h2>
+            <button
+              className="border-2 border-gray-600 ml-6 mb-1 text-sm "
+              onClick={() => deleteProduct(val.product_id)}
+            >
+              Delete Product
+            </button>
           </div>
         );
       })}
@@ -173,11 +324,45 @@ const Products = () => {
   );
 };
 
-const Methods = () => {
-  let { userFn } = useParams();
+const Categories = () => {
+  const [categoryList, setcategoryList] = useState([]);
+
+  const getCategories = () => {
+    axios.get("http://localhost:3001/getcategory").then((response) => {
+      setcategoryList(response.data);
+    });
+  };
+
+  const deleteCategory = (id) => {
+    axios
+      .delete(`http://localhost:3001/deletecategory/${id}`)
+      .then((response) => {
+        console.log(response.data);
+      });
+  };
+
+  useEffect(() => {
+    getCategories();
+  }, []);
+
   return (
     <div>
-      <h2>{userFn}</h2>
+      {categoryList.map((val, index) => {
+        return (
+          <div key={index}>
+            <div className="border-2 border-black m-2 flex justify-between">
+              &nbsp;{val.id}.&ensp;{val.name}
+              <button
+                className="border-2 border-gray-600"
+                onClick={() => deleteCategory(val.id)}
+              >
+                Delete Category
+              </button>
+            </div>
+            {/* <h2>No. of Products:{val.total}</h2> */}
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -185,24 +370,30 @@ const Methods = () => {
 const Register = () => {
   const [username, setuserName] = useState("");
   const [password, setpassWord] = useState("");
+  const [confirmpass, setconfirmPass] = useState("");
+  const [status, setStatus] = useState("");
   const [email, setEmail] = useState("");
 
   const reg = () => {
-    axios
-      .post("http://localhost:3001/register", {
-        username: username,
-        password: password,
-        email: email,
-      })
-      .then((response) => {
-        console.log("userinfo sent from client");
-      });
+    password !== confirmpass
+      ? setStatus("Passwords do not match")
+      : axios
+          .post("http://localhost:3001/register", {
+            username: username,
+            password: password,
+            email: email,
+          })
+          .then((response) => {
+            console.log("userinfo sent from client");
+            setStatus("User registered Successfully");
+          });
   };
   return (
-    <div>
+    <div className="text-center">
       <label htmlFor="name">Username:</label>
       <br />
       <input
+        className="border-2 border-black"
         onChange={(e) => setuserName(e.target.value)}
         id="name"
         type="text"
@@ -211,6 +402,7 @@ const Register = () => {
       <label htmlFor="email">Email:</label>
       <br />
       <input
+        className="border-2 border-black"
         onChange={(e) => setEmail(e.target.value)}
         id="email"
         type="text"
@@ -219,6 +411,7 @@ const Register = () => {
       <label htmlFor="pass">Password:</label>
       <br />
       <input
+        className="border-2 border-black"
         onChange={(e) => setpassWord(e.target.value)}
         id="pass"
         type="text"
@@ -226,38 +419,53 @@ const Register = () => {
       <br />
       <label htmlFor="confirm">Confirm Password:</label>
       <br />
-      <input id="confirm" type="text"></input>
+      <input
+        className="border-2 border-black"
+        id="confirm"
+        onChange={(e) => setconfirmPass(e.target.value)}
+        type="text"
+      ></input>
       <br />
-      <button onClick={reg}>Register</button>
+      <button className="border-2 border-black my-2 px-2" onClick={reg}>
+        Register
+      </button>
       <br />
+      <div>{status}</div>
     </div>
   );
 };
 
 const ChangePass = () => {
-  const [username, setuserName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setpassWord] = useState("");
   const [confirmpass, setconfirmPass] = useState("");
+  const [status, setStatus] = useState("");
 
   const cngPassword = () => {
-    axios
-      .put("http://localhost:3001/change", {
-        username: username,
-        password: password,
-      })
-      .then((response) => {
-        console.log(response);
-      });
+    if (password !== confirmpass) {
+      setStatus("Passwords do not match.");
+    } else {
+      axios
+        .put("http://localhost:3001/change", {
+          email: email,
+          password: password,
+        })
+        .then((response) => {
+          console.log(response.data);
+          setStatus("Password updated succesfully");
+        });
+    }
   };
 
   return (
-    <div>
+    <div className="text-center">
       <h2>Change Password</h2>
 
-      <label htmlFor="user">Enter Username</label>
+      <label htmlFor="user">Enter E-mail id</label>
       <br />
       <input
-        onChange={(e) => setuserName(e.target.value)}
+        className="border-2 border-black"
+        onChange={(e) => setEmail(e.target.value)}
         id="user"
         type="text"
       ></input>
@@ -265,6 +473,7 @@ const ChangePass = () => {
       <label htmlFor="pass">Enter New Password</label>
       <br />
       <input
+        className="border-2 border-black"
         onChange={(e) => setpassWord(e.target.value)}
         id="pass"
         type="password"
@@ -273,12 +482,18 @@ const ChangePass = () => {
       <label htmlFor="confirm">Confirm Password</label>
       <br />
       <input
+        className="border-2 border-black"
         onChange={(e) => setconfirmPass(e.target.value)}
         id="confirm"
         type="password"
       ></input>
       <br />
-      <button onClick={cngPassword}>Change Password</button>
+      <button className="border-2 border-black my-2 px-2" onClick={cngPassword}>
+        Change Password
+      </button>
+      <div>
+        <h2>{status}</h2>
+      </div>
     </div>
   );
 };
@@ -290,37 +505,3 @@ const Forget = () => {
     </div>
   );
 };
-
-function Topics() {
-  // The `path` lets us build <Route> paths that are
-  // relative to the parent route, while the `url` lets
-  // us build relative links.
-
-  let { path, url } = useRouteMatch();
-  return (
-    <div>
-      <Link to={`${url}/topic1`}>Topic1</Link>
-      <Link to={`${url}/topic2`}>Topic2</Link>
-      <Link to={`${url}/topic3`}>Topic3</Link>
-      <Switch>
-        <Route path={`${path}/:topicId`}>
-          <Topic />
-        </Route>
-      </Switch>
-    </div>
-  );
-}
-
-function Topic() {
-  // The <Route> that rendered this component has a
-  // path of `/topics/:topicId`. The `:topicId` portion
-  // of the URL indicates a placeholder that we can
-  // get from `useParams()`.
-  let { topicId } = useParams();
-
-  return (
-    <div>
-      <h3>{topicId}</h3>
-    </div>
-  );
-}
